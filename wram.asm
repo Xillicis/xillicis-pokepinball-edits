@@ -2381,7 +2381,10 @@ wCurPokedexIndex:: ; 0xd959
 wPokedexOffset:: ; 0xd95a
 	ds $1
 
-wd95b:: ; 0xd95b
+; This is an indicator used to decide which sprite to load in the Pokedex for the cursor. 
+; If the 4th bit is true, then the cursor is loaded, otherwise its blank. This is what controls the 
+; blinking of the cursor.
+wPokedexBlinkingCursorIndicator:: ; 0xd95b
 	ds $1
 
 wd95c:: ; 0xd95c
