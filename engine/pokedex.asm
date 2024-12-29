@@ -43,7 +43,7 @@ LoadPokedexScreen: ; 0x2800e
 	ld [wCurPokedexIndex], a
 	ld [wPokedexOffset], a
 	ld [wPokedexBlinkingCursorIndicator], a
-	ld [wPokedexDirectionalInputDelay], a
+	ld [wd95c], a
 	ld [wd960], a
 	ld [wd961], a
 	ld [wd95e], a
@@ -727,7 +727,7 @@ HandlePokedexDirectionalInput: ; 0x28513
 	ld hl, wd95e ; some temp storage for joypad input
 	or [hl]
 	ld [hl], a ; load any combination of button presses
-	ld a, [wPokedexDirectionalInputDelay]
+	ld a, [wd95c]
 	and a
 	ret nz
 	ld a, [wd95e]
@@ -748,7 +748,7 @@ HandlePokedexDirectionalInput: ; 0x28513
 	dec a
 	ld [wCurPokedexIndex], a
 	ld a, $4
-	ld [wPokedexDirectionalInputDelay], a
+	ld [wd95c], a
 	ld a, $1
 	ld [wPokedexCursorWasMoved], a
 	jr .done
@@ -761,7 +761,7 @@ HandlePokedexDirectionalInput: ; 0x28513
 	jr z, .done ; jump if reached bottom of Pokedex
 	ld [wCurPokedexIndex], a
 	ld a, $4
-	ld [wPokedexDirectionalInputDelay], a
+	ld [wd95c], a
 	ld a, $1
 	ld [wPokedexCursorWasMoved], a
 	jr .done
@@ -922,12 +922,12 @@ Func_285db: ; 0x285db
 	call LoadSpriteData
 .asm_28667
 	pop bc
-	ld a, [wPokedexDirectionalInputDelay]
+	ld a, [wd95c]
 	and a
 	ret z
 ; not sure what happens here yet
 	dec a
-	ld [wPokedexDirectionalInputDelay], a
+	ld [wd95c], a
 	sla a
 	ld e, a
 	ld d, $0
@@ -1016,7 +1016,7 @@ Func_286dd: ; 0x286dd
 	ld a, [wPokedexWindowWasShifted]
 	and a
 	ret z
-	ld a, [wPokedexDirectionalInputDelay]
+	ld a, [wd95c]
 	and a
 	jr nz, .asm_2870d
 	ld [wPokedexWindowWasShifted], a
@@ -1246,7 +1246,7 @@ Func_2885c: ; 0x2885c
 	ld b, $0
 	ld hl, wPokedexFlags
 	add hl, bc
-	bit 1, [hl]
+	bit BIT_POKEDEX_MON_CAUGHT, [hl]
 	call nz, AnimateMonSpriteIfStartIsPressed
 	ld bc, $8888
 	ld a, SPRITE_DEX_SCROLLBAR_TOPPER_2
@@ -1309,7 +1309,7 @@ Func_288c6: ; 0x288c6
 	ld b, $0
 	ld hl, wPokedexFlags
 	add hl, bc
-	bit 1, [hl]
+	bit BIT_POKEDEX_MON_CAUGHT, [hl]
 	ld hl, Unknown_2c000
 	jr z, .asm_288f4
 	ld a, [wCurPokedexIndex]
@@ -1370,6 +1370,7 @@ Func_28931: ; 0x28931
 	ld hl, BlankDexName
 	jr z, .asm_2895d
 	ld a, [wCurPokedexIndex]
+; compute 11 * hl (11 is length of name)
 	ld c, a
 	ld b, $0
 	ld h, b
@@ -1468,7 +1469,7 @@ Func_289c8: ; 0x289c8
 	ld b, $0
 	ld hl, wPokedexFlags
 	add hl, bc
-	bit 1, [hl]
+	bit BIT_POKEDEX_MON_CAUGHT, [hl]
 	ld hl, BlankSpeciesName
 	jr z, .pokemonNotOwned
 	ld a, [wCurPokedexIndex]
@@ -1541,7 +1542,7 @@ Func_28a15: ; 0x28a15
 	ld b, $0
 	ld hl, wPokedexFlags
 	add hl, bc
-	bit 1, [hl]
+	bit BIT_POKEDEX_MON_CAUGHT, [hl]
 	jr nz, .asm_28a54
 	ld de, BlankPokemonTileData_28a7f
 .asm_28a54
@@ -2000,7 +2001,7 @@ CountNumSeenOwnedMons: ; 0x28d35
 	ld de, $0000  ; keep a running count: d = owned, e = seen
 	ld b, NUM_POKEMON
 .checkSeen
-	bit 0, [hl]  ; is mon seen?
+	bit BIT_POKEDEX_MON_SEEN, [hl]  ; is mon seen?
 	jr z, .checkOwned
 	inc e
 .checkOwned
@@ -2235,7 +2236,7 @@ Func_28e73: ; 0x28e73
 	ld h, a
 	push hl
 	ld hl, wc000
-	ld a, [wd860]
+	ld a, [wd860] ; loading `a` here has no effect.
 	ret
 
 Func_28e9a:
