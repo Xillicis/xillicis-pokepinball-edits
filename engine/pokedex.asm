@@ -43,7 +43,7 @@ LoadPokedexScreen: ; 0x2800e
 	ld [wCurPokedexIndex], a
 	ld [wPokedexOffset], a
 	ld [wPokedexBlinkingCursorIndicator], a
-	ld [wd95c], a
+	ld [wPokedexDirectionalInputDelay], a
 	ld [wd960], a
 	ld [wd961], a
 	ld [wd95e], a
@@ -727,7 +727,7 @@ HandlePokedexDirectionalInput: ; 0x28513
 	ld hl, wd95e ; some temp storage for joypad input
 	or [hl]
 	ld [hl], a ; load any combination of button presses
-	ld a, [wd95c]
+	ld a, [wPokedexDirectionalInputDelay]
 	and a
 	ret nz
 	ld a, [wd95e]
@@ -748,7 +748,7 @@ HandlePokedexDirectionalInput: ; 0x28513
 	dec a
 	ld [wCurPokedexIndex], a
 	ld a, $4
-	ld [wd95c], a
+	ld [wPokedexDirectionalInputDelay], a
 	ld a, $1
 	ld [wPokedexCursorWasMoved], a
 	jr .done
@@ -761,7 +761,7 @@ HandlePokedexDirectionalInput: ; 0x28513
 	jr z, .done ; jump if reached bottom of Pokedex
 	ld [wCurPokedexIndex], a
 	ld a, $4
-	ld [wd95c], a
+	ld [wPokedexDirectionalInputDelay], a
 	ld a, $1
 	ld [wPokedexCursorWasMoved], a
 	jr .done
@@ -887,8 +887,8 @@ Func_285db: ; 0x285db
 	jr nc, .noChangeForWindow1
 ; if scrolling up moves the window
 	dec [hl]
-	ld a, $1
-	ld [wd95d], a
+	ld a, 1
+	ld [wPokedexWindowWasShifted], a
 	xor a
 	jr .decideCursorSprite
 
@@ -896,8 +896,8 @@ Func_285db: ; 0x285db
 	cp $5
 	jr c, .decideCursorSprite
 ; if scrolling down moves the window
-	ld a, $1
-	ld [wd95d], a
+	ld a, 1
+	ld [wPokedexWindowWasShifted], a
 	inc [hl]
 	ld a, $4
 .decideCursorSprite
@@ -922,12 +922,12 @@ Func_285db: ; 0x285db
 	call LoadSpriteData
 .asm_28667
 	pop bc
-	ld a, [wd95c]
+	ld a, [wPokedexDirectionalInputDelay]
 	and a
 	ret z
 ; not sure what happens here yet
 	dec a
-	ld [wd95c], a
+	ld [wPokedexDirectionalInputDelay], a
 	sla a
 	ld e, a
 	ld d, $0
@@ -1013,13 +1013,13 @@ Func_286dd: ; 0x286dd
 	pop hl
 	pop bc
 .asm_286ff
-	ld a, [wd95d]
+	ld a, [wPokedexWindowWasShifted]
 	and a
 	ret z
-	ld a, [wd95c]
+	ld a, [wPokedexDirectionalInputDelay]
 	and a
 	jr nz, .asm_2870d
-	ld [wd95d], a
+	ld [wPokedexWindowWasShifted], a
 .asm_2870d
 	ld a, c
 	and a
@@ -1041,7 +1041,7 @@ Func_286dd: ; 0x286dd
 
 Func_28721: ; 0x28721
 	pop hl
-	ld a, [wd95d]
+	ld a, [wPokedexWindowWasShifted]
 	and a
 	ret z
 	ld a, c
@@ -1091,7 +1091,7 @@ Func_28721: ; 0x28721
 
 Func_28765: ; 0x28765
 	pop hl
-	ld a, [wd95d]
+	ld a, [wPokedexWindowWasShifted]
 	and a
 	ret z
 	ld a, c
