@@ -123,7 +123,7 @@ MainPokedexScreen: ; 0x280fe
 	jr z, .checkIfBPressed
 	ld a, [wPokedexCursorWasMoved]
 	and a
-	jp nz, .asm_28174
+	jp nz, .done
 	ld a, [wCurPokedexIndex]
 	ld c, a
 	ld b, $0
@@ -131,7 +131,7 @@ MainPokedexScreen: ; 0x280fe
 	add hl, bc
 	ld a, [hl]
 	and a
-	jp z, .asm_28174
+	jp z, .done
 	push hl
 	ld a, [wCurPokedexIndex]
 	inc a
@@ -140,8 +140,8 @@ MainPokedexScreen: ; 0x280fe
 	call PlayCry
 	pop hl
 	bit BIT_POKEDEX_MON_CAUGHT, [hl]
-	jp z, .asm_28174
-	call Func_288c6
+	jp z, .done
+	call LoadPokemonDescription
 	call Func_2885c
 	call CleanSpriteBuffer
 	call Func_2887c
@@ -161,7 +161,7 @@ MainPokedexScreen: ; 0x280fe
 .asm_2814f
 	ldh a, [hGameBoyColorFlag]
 	and a
-	jr z, .asm_28174
+	jr z, .done
 	ldh a, [hJoypadState]
 	bit BIT_START, a
 	jr z, .asm_28168
@@ -170,7 +170,7 @@ MainPokedexScreen: ; 0x280fe
 	ld a, $ff
 	ld [wd960], a
 	call z, Func_28add
-	jr .asm_28174
+	jr .done
 
 .asm_28168
 	ld a, [wd960]
@@ -178,7 +178,7 @@ MainPokedexScreen: ; 0x280fe
 	ld a, $0
 	ld [wd960], a
 	call nz, Func_28add
-.asm_28174
+.done
 	call Func_285db
 	ret
 
@@ -188,27 +188,27 @@ MonInfoPokedexScreen: ; 0x28178
 	jr z, .asm_28190
 	ldh a, [hNewlyPressedButtons]
 	bit BIT_A_BUTTON, a
-	jr z, .asm_2818a
+	jr z, .checkIfBPressed
 	call Func_28912
-	jr .asm_281a2
+	jr .checkIfStartPressed
 
-.asm_2818a
-	bit 1, a
-	jr z, .asm_281a2
-	jr .asm_28196
+.checkIfBPressed
+	bit BIT_B_BUTTON, a
+	jr z, .checkIfStartPressed
+	jr .BButtonPressed
 
 .asm_28190
 	ldh a, [hNewlyPressedButtons]
 	and $3
-	jr z, .asm_281a2
-.asm_28196
+	jr z, .checkIfStartPressed
+.BButtonPressed
 	call Func_288a2
 	call Func_285db
 	ld a, $1
 	ld [wScreenState], a
 	ret
 
-.asm_281a2
+.checkIfStartPressed
 	ldh a, [hGameBoyColorFlag]
 	and a
 	jr z, .asm_281c7
@@ -1303,7 +1303,7 @@ Func_288a2: ; 0x288a2
 	call LoadVRAMData
 	ret
 
-Func_288c6: ; 0x288c6
+LoadPokemonDescription: ; 0x288c6
 	ld a, [wCurPokedexIndex]
 	ld c, a
 	ld b, $0
@@ -1366,9 +1366,9 @@ Func_28931: ; 0x28931
 	ld hl, wPokedexFlags
 	add hl, bc
 	ld a, [hl]
-	and a
+	and a 
 	ld hl, BlankDexName
-	jr z, .asm_2895d
+	jr z, .gotPokemonNameAddress
 	ld a, [wCurPokedexIndex]
 ; compute 11 * hl (11 is length of name)
 	ld c, a
@@ -1386,12 +1386,12 @@ Func_28931: ; 0x28931
 	add hl, bc
 	ld bc, MonDexNames
 	add hl, bc
-.asm_2895d
+.gotPokemonNameAddress
 	ld a, $ff
 	ld [wd860], a
 	xor a
 	ld [wd861], a
-	ld bc, $500a
+	ld bc, $500a ; not memory address
 	ld de, vTilesBG tile $50
 	call Func_28e09
 	ret
@@ -1400,14 +1400,16 @@ BlankDexName:
 	db " @"
 
 Func_28972: ; 0x28972
+; b is the counter. Iterates 6 times.
+; c is used to determine where to draw the name in the Pokedex wh
 	ld a, [wPokedexOffset]
 	ld c, a
 	ld b, $6
 .asm_28978
 	push bc
 	ld a, c
-	sla a
-	and $e
+	sla a ; make offset even (by doubling)
+	and $e ; largest even nybble
 	ld e, a
 	ld d, $0
 	ld hl, TileLocations_287b7
@@ -1416,6 +1418,7 @@ Func_28972: ; 0x28972
 	ld e, a
 	ld a, [hl]
 	ld d, a
+; de has tile address for first letter of Pokemon name
 	ld a, c
 	call GetPokemonName
 	pop bc
@@ -1660,7 +1663,7 @@ Func_28add: ; 0x28add
 	and a
 	jr z, .asm_28afc
 	call CheckIfMonHasAnimation
-	jp z, Func_28bf5
+	jp z, PlayMonPokedexCatchAnimation
 .asm_28afc
 	ld a, [wCurPokedexIndex]
 	ld c, a
@@ -1788,7 +1791,7 @@ LoadSeenPokemonGfx: ; 0x28baf
 	call LoadBillboardPaletteMap
 	ret
 
-Func_28bf5: ; 0x28bf5
+PlayMonPokedexCatchAnimation: ; 0x28bf5
 	ld a, [wCurPokedexIndex]
 	ld c, a
 	ld b, $0
@@ -2082,7 +2085,7 @@ Func_28d97: ; 0x28d97
 	ldh [hVariableWidthFontFF8E], a
 	ldh [hVariableWidthFontFF90], a
 	ldh [hVariableWidthFontFF91], a
-	call Func_28e73
+	call Func_28e73 ; function zeros out a large chunk of memory
 .asm_28daa
 	call Func_2957c
 	jr nc, .asm_28dcb
@@ -2216,7 +2219,8 @@ Func_28e09: ; 0x28e09
 Func_28e73: ; 0x28e73
 	push hl
 	ldh a, [hVariableWidthFontFF8F]
-; compute 16*bc
+; `a` in this function always contains either $0A, $16, or $6c
+; compute 16*a and stores it as `bc`.
 	ld c, a
 	ld b, $0
 	sla c
@@ -2227,6 +2231,7 @@ Func_28e73: ; 0x28e73
 	rl b
 	sla c
 	rl b
+; Subtract bc from the address stored in hl.
 	ld hl, Func_29566
 	ld a, l
 	sub c
@@ -2234,7 +2239,10 @@ Func_28e73: ; 0x28e73
 	ld a, h
 	sbc b
 	ld h, a
-	push hl
+; When we `push hl`, this will be the address that we will return to when `ret` is called.
+; Specifically, the address should occur somewhere in `Func_28e9a` or `Func_29566`, basically,
+; indicating how many memory locations we should zero out.
+	push hl	
 	ld hl, wc000
 	ld a, [wd860] ; loading `a` here has no effect.
 	ret
