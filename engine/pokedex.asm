@@ -50,7 +50,7 @@ LoadPokedexScreen: ; 0x2800e
 	ld a, $1
 	ld [wd862], a
 	call ClearSpriteBuffer
-	call Func_285db
+	call DisplayPokedexScrollBarAndCursor
 	call Func_28931
 	call Func_289c8
 	call Func_28a15
@@ -152,13 +152,13 @@ MainPokedexScreen: ; 0x280fe
 
 .checkIfBPressed
 	bit BIT_B_BUTTON, a
-	jr z, .asm_2814f
-	call Func_285db
+	jr z, .checkIfGameboyColorAndIfStartIsPressed
+	call DisplayPokedexScrollBarAndCursor
 	ld a, $4
 	ld [wScreenState], a
 	ret
 
-.asm_2814f
+.checkIfGameboyColorAndIfStartIsPressed
 	ldh a, [hGameBoyColorFlag]
 	and a
 	jr z, .done
@@ -179,7 +179,7 @@ MainPokedexScreen: ; 0x280fe
 	ld [wd960], a
 	call nz, Func_28add
 .done
-	call Func_285db
+	call DisplayPokedexScrollBarAndCursor
 	ret
 
 MonInfoPokedexScreen: ; 0x28178
@@ -203,7 +203,7 @@ MonInfoPokedexScreen: ; 0x28178
 	jr z, .checkIfStartPressed
 .BButtonPressed
 	call Func_288a2
-	call Func_285db
+	call DisplayPokedexScrollBarAndCursor
 	ld a, $1
 	ld [wScreenState], a
 	ret
@@ -484,13 +484,13 @@ Func_28368: ; 0x28368
 	ld hl, wda8a
 	add hl, de
 	ld a, [hl]
-	bit 5, b
-	jr z, .asm_28386
+	bit BIT_D_LEFT, b
+	jr z, .checkIfRightPressed
 	dec a
 	jr .asm_2838a
 
-.asm_28386
-	bit 4, b
+.checkIfRightPressed
+	bit BIT_D_RIGHT, b
 	ret z
 	inc a
 .asm_2838a
@@ -668,31 +668,31 @@ Func_284bc: ; 0x284bc
 	ldh a, [hPressedButtons]
 	ld b, a
 	ld a, [wdaa2]
-	bit 5, b
-	jr z, .asm_284cd
+	bit BIT_D_LEFT, b
+	jr z, .checkIfRightPressed
 	dec a
 	bit 7, a
 	jr nz, .asm_284ef
 	jr .asm_284f5
 
-.asm_284cd
-	bit 4, b
-	jr z, .asm_284d8
+.checkIfRightPressed
+	bit BIT_D_RIGHT, b
+	jr z, .checkIfUpPressed
 	inc a
 	cp $18
 	jr nc, .asm_284f3
 	jr .asm_284f5
 
-.asm_284d8
-	bit 6, b
-	jr z, .asm_284e4
+.checkIfUpPressed
+	bit BIT_D_UP, b
+	jr z, .checkIfDownPressed
 	sub $3
 	bit 7, a
 	jr nz, .asm_284ef
 	jr .asm_284f5
 
-.asm_284e4
-	bit 7, b
+.checkIfDownPressed
+	bit BIT_D_DOWN, b
 	ret z
 	add $3
 	cp $18
@@ -842,13 +842,13 @@ Func_285ca: ; 0x285ca
 	ret
 
 ; something about loading sprites
-Func_285db: ; 0x285db
+DisplayPokedexScrollBarAndCursor: ; 0x285db
 	ld a, [wCurPokedexIndex]
 	ld c, a
 	ld b, $0
 	ld hl, wPokedexFlags
 	add hl, bc
-	bit BIT_POKEDEX_MON_CAUGHT, [hl]  ; has pokemon been seen or captured?
+	bit BIT_POKEDEX_MON_CAUGHT, [hl]
 	call nz, AnimateMonSpriteIfStartIsPressed
 	ld bc, $8c38
 	ld a, SPRITE_DEX_SCROLLBAR_TOPPER_0
@@ -1366,7 +1366,7 @@ Func_28931: ; 0x28931
 	ld hl, wPokedexFlags
 	add hl, bc
 	ld a, [hl]
-	and a 
+	and a
 	ld hl, BlankDexName
 	jr z, .gotPokemonNameAddress
 	ld a, [wCurPokedexIndex]
@@ -1401,7 +1401,7 @@ BlankDexName:
 
 Func_28972: ; 0x28972
 ; b is the counter. Iterates 6 times.
-; c is used to determine where to draw the name in the Pokedex wh
+; c is used to determine where to draw the name in the Pokedex
 	ld a, [wPokedexOffset]
 	ld c, a
 	ld b, $6
@@ -2231,7 +2231,7 @@ Func_28e73: ; 0x28e73
 	rl b
 	sla c
 	rl b
-; Subtract bc from the address stored in hl.
+; Subtract bc from the function address, hl.
 	ld hl, Func_29566
 	ld a, l
 	sub c
@@ -2242,7 +2242,7 @@ Func_28e73: ; 0x28e73
 ; When we `push hl`, this will be the address that we will return to when `ret` is called.
 ; Specifically, the address should occur somewhere in `Func_28e9a` or `Func_29566`, basically,
 ; indicating how many memory locations we should zero out.
-	push hl	
+	push hl
 	ld hl, wc000
 	ld a, [wd860] ; loading `a` here has no effect.
 	ret
