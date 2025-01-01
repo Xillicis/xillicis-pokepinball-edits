@@ -867,9 +867,9 @@ DisplayPokedexScrollBarAndCursor: ; 0x285db
 	ld hl, DexScrollBarOffsets
 	add hl, bc
 	ld a, [hl]
-	add $49 ; why add $49? Maybe shifting to the right tile location?
+	add $49 ; shift y-location
 	ld c, a
-	ld b, $90 ; Why loading $90?
+	ld b, $90 ; shift x-location  
 	ld a, [wPokedexBlinkingCursorIndicator]
 	srl a
 	srl a
